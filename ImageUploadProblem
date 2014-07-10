@@ -1,0 +1,229 @@
+//
+//  CreateQiuShiViewController.m
+//  XWQiuShiBaiKe
+//
+//  Created by Ren XinWei on 13-5-31.
+//  Copyright (c) 2013年 renxinwei's MacBook Pro. All rights reserved.
+//
+
+#import "CreateQiuShiViewController.h"
+#import "UIViewController+KNSemiModal.h"
+#import "ASINetworkQueue.h"
+#import "AFNetworking.h"
+
+
+@interface CreateQiuShiViewController ()
+
+@end
+
+@implementation CreateQiuShiViewController
+
+- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
+{
+    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+    if (self) {
+        // Custom initialization
+    }
+    return self;
+}
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    // Do any additional setup after loading the view from its nib.
+    [self initViews];
+}
+
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    
+    if (is_iPhone5) {
+        CGRect rect = self.view.frame;
+        rect.size.height = 548;
+        self.view.frame = rect;
+    }
+}
+
+
+- (void)viewDidUnload
+{
+    [self setCloseBarButton:nil];
+    [self setTitleBarButton:nil];
+    [self setSendBarButton:nil];
+    [self setCreateQSToolBar:nil];
+    [self setBackgroundImageView:nil];
+    [self setQsContentTextView:nil];
+    [super viewDidUnload];
+}
+
+#pragma mark - Private methods
+
+- (void)initViews
+{
+    [self initBackgroundView];
+    [self initToolBar];
+    _qsContentTextView.placeHolder = @"这里不欢迎贴小广告、谩骂、色情、贩毒、卖军火等行为，否则您的言论将有可能作为禁言的呈堂证供的哟。";
+    [_qsContentTextView becomeFirstResponder];
+}
+
+- (void)initBackgroundView
+{
+    [self.view setBackgroundColor:[Toolkit getAppBackgroundColor]];
+    UIImage *backgroundImage = [UIImage imageNamed:@"block_post_background.png"];
+    backgroundImage = [backgroundImage resizableImageWithCapInsets:UIEdgeInsetsMake(7, 320, 2, 0)];
+    _backgroundImageView.image = backgroundImage;
+}
+
+- (void)initToolBar
+{
+    [_createQSToolBar setBackgroundImage:[UIImage imageNamed:@"main_background.png"] forToolbarPosition:UIToolbarPositionAny barMetrics:UIBarMetricsDefault];
+    [self initTitleView];
+    
+    UIButton *closeButton = [[UIButton alloc] initWithFrame:CGRectMake(0, 0, 32, 32)];
+    [closeButton setImage:[UIImage imageNamed:@"icon_close_large.png"] forState:UIControlStateNormal];
+    [closeButton addTarget:self action:@selector(closeSettingViewController) forControlEvents:UIControlEventTouchUpInside];
+    _closeBarButton.customView = closeButton;
+    
+    UIButton *sendButton = [[UIButton alloc] initWithFrame:CGRectMake(0, 0, 32, 32)];
+    [sendButton setImage:[UIImage imageNamed:@"icon_send.png"] forState:UIControlStateNormal];
+    [sendButton addTarget:self action:@selector(sendNewQiuShi) forControlEvents:UIControlEventTouchUpInside];
+    _sendBarButton.customView = sendButton;
+}
+
+- (void)initTitleView
+{
+    UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 80, 35)];
+    titleLabel.textAlignment = UITextAlignmentCenter;
+    titleLabel.font = [UIFont systemFontOfSize:18];
+    titleLabel.textColor = [UIColor colorWithRed:130/255 green:95/255 blue:66/255 alpha:1.0];
+    titleLabel.backgroundColor = [UIColor clearColor];
+    titleLabel.text = @"撰写糗事";
+    _titleBarButton.customView = titleLabel;
+}
+
+- (void)closeSettingViewController
+{
+    [self dismissSemiModalViewWithCompletion:nil];
+}
+
+- (void)sendNewQiuShi
+{
+    if ([_qsContentTextView.text length] > 5) {
+//        [Dialog simpleToast:@"接口参数未知，未能实现发表功能"];
+        [self initCreateQSRequest];
+    }
+    else {
+        [Dialog simpleToast:@"写的不够啊"];
+    }
+}
+
+//ASIHttpRequest方式 POST上传图片
+- (void)initCreateQSRequest
+{
+/*    NSURL *url = [NSURL URLWithString:[@"http://www.senorldroll.com/newsFeed/create" stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+    ASIFormDataRequest *dataRequest = [ASIFormDataRequest requestWithURL:url];
+    [dataRequest addRequestHeader:@"multipart/form-data" value:@""];
+    [dataRequest setPostValue:@"1" forKey:@"userId"];
+    [dataRequest setPostValue:@"PUBLIC" forKey:@"feedType"];
+    [dataRequest setPostValue:@"TEXT " forKey:@"messageType"];
+    [dataRequest setPostValue:@"我是傻逼" forKey:@"message"];
+    
+    NSURL *url2 = [NSURL URLWithString:[@"http://www.senorldroll.com/newsFeed/create" stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+    ASIFormDataRequest *dataRequest2 = [ASIFormDataRequest requestWithURL:url2];
+    [dataRequest2 addRequestHeader:@"multipart/form-data" value:@"newsFeedImage"];
+
+    [dataRequest2 setPostValue:@"1" forKey:@"userId"];
+    [dataRequest2 setPostValue:@"PUBLIC" forKey:@"feedType"];
+    [dataRequest2 setPostValue:@"TEXT_IMAGE" forKey:@"messageType"];
+    [dataRequest2 setPostValue:@"我是傻逼" forKey:@"message"];
+
+    // Add Image
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
+                                                         NSUserDomainMask, YES);
+    NSString *documentsDirectory = [paths objectAtIndex:0];
+    NSString *dataPath = [documentsDirectory
+                          stringByAppendingPathComponent:@"AppIcon50x50.png"];
+    UIImage * postImage = [UIImage imageWithContentsOfFile:@"/Users/shaobinmin/Desktop/gift.png"];
+    NSLog(@"the path is %@", dataPath);
+    // Get Image
+//    NSData *imageData = [[NSData alloc] initWithContentsOfFile:@"/Users/shaobinmin/Desktop/gift.png"];
+    NSData * imageData = UIImagePNGRepresentation(postImage);
+    NSLog(@"data for image %@", imageData);
+//    [dataRequest2 setFile:@"/Users/shaobinmin/Desktop/gift.png" forKey:@"image"];
+    [dataRequest2 addData:imageData withFileName:@"gift.png" andContentType:@"image/png" forKey:@"image"];
+//    [dataRequest2 setData:imageData forKey:@"message"];
+    [dataRequest2 setDelegate:self];
+    [dataRequest2 startAsynchronous];
+ */
+
+    
+    
+    UIImage *image = [UIImage imageWithContentsOfFile:@"/Users/shaobinmin/Pictures/se.jpeg"];
+    NSData * imageData = UIImageJPEGRepresentation(image, 0.5);
+//    UIImage * image = [UIImage imageNamed:@"timelineTitle1.png"];
+//    NSData *imageData = UIImagePNGRepresentation(image);
+
+    UIImageView * imview = [[UIImageView alloc] initWithFrame:CGRectMake(30, 39, 240, 250)];
+    [imview setImage:image];
+    [self.qsContentTextView addSubview:imview];
+    NSLog(@"the image is %@", imageData);
+    NSString * strurl = [NSString stringWithFormat:@"http://www.senorldroll.com/newsFeed/create"];
+    NSURL *url = [NSURL URLWithString:[strurl stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+    NSLog(@"url %@",url);
+    NSData *postdata = [strurl dataUsingEncoding:NSUTF8StringEncoding];
+    NSDictionary * para = @{@"find": @"this"};//@{@"class":@"senorldroll.User"};//@{@"result": @"ok",@"message":@""};//@{@"result":@"ok"};三个都可以
+    NSDictionary * param = @{@"userId": @"1", @"feedType":@"PUBLIC", @"messageType":@"IMAGE"};
+    
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.responseSerializer = [AFHTTPResponseSerializer serializer];
+
+    NSURL *filePath = [NSURL fileURLWithPath:@"/Users/shaobinmin/Pictures/se.jpeg"];
+    [manager POST:strurl parameters:param constructingBodyWithBlock:^(id<AFMultipartFormData> formData) {
+        [formData appendPartWithFileURL:filePath name:@"image" error:nil];
+    } success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        NSString * strNew = [[NSString alloc] initWithData:responseObject encoding:NSUTF8StringEncoding];
+        NSLog(@"Success: %@", strNew);
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        NSLog(@"Error: %@", error);
+    }];
+//        uploadTaskWithStreamedRequest:request progress:&progress completionHandler:^(NSURLResponse *response, id responseObject, NSError *error) {
+//        if (error) {
+//            NSLog(@"Error: %@", error);
+//        } else {
+//            NSLog(@"%@ 555555%@", response, responseObject);
+//            NSString * succes = [responseObject objectForKey:@"success"];
+//            
+//            if ([succes intValue]==1) {
+//                UIAlertView *errorAlert = [[UIAlertView alloc]
+//                                           initWithTitle:@"success"
+//                                           message:@"Text sent"
+//                                           delegate:self cancelButtonTitle:@"OK"
+//                                           otherButtonTitles:nil];
+//                errorAlert.tag = 100;
+//                
+//                [errorAlert show];
+//                
+//            }else
+//            {
+//                NSLog(@"error");
+//            }
+//        }
+//    }];
+    
+    
+
+ 
+}
+
+- (void)requestFinished:(ASIHTTPRequest *)request
+{
+    NSLog(@"finish %@", [request responseString]);
+}
+
+- (void)requestFailed:(ASIHTTPRequest *)request
+{
+    NSLog(@"fail %@", [request error]);
+}
+
+@end
